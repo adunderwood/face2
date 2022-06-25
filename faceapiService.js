@@ -9,6 +9,8 @@ const faceapi = require("@vladmandic/face-api/dist/face-api.node.js");
 const modelPathRoot = "./models";
 
 let optionsSSDMobileNet;
+let optionsTiny;
+let optionsAgeGender;
 
 const { Canvas, Image, ImageData } = canvas;
 faceapi.env.monkeyPatch({ Canvas, Image, ImageData });
@@ -25,7 +27,7 @@ async function image(file) {
 async function detect(tensor) {
   var result = {}
   try {
-    result = await faceapi.detectAllFaces(tensor, optionsSSDMobileNet);
+    result = await faceapi.detectAllFaces(tensor, optionsTiny) //, new faceapi.ageGenderNetOptions()) //optionsSSDMobileNet);
   } catch(err) {
     console.log(err)
   }
@@ -38,8 +40,6 @@ async function main(file, filename) {
   var result
   var tensor
 
-  console.log("FaceAPI single-process test");
-
   await faceapi.tf.setBackend("tensorflow");
   await faceapi.tf.enableProdMode();
   await faceapi.tf.ENV.set("DEBUG", false);
@@ -47,17 +47,42 @@ async function main(file, filename) {
 
   console.log(
     //`Version: TensorFlow/JS ${faceapi.tf?.version_core} FaceAPI ${
-      faceapi.tf + " " +
-      faceapi.version.faceapi
-   // } Backend: ${faceapi.tf?.getBackend()}`
+    //  faceapi.tf + " " +
+    //  faceapi.version.faceapi
+    // } Backend: ${faceapi.tf?.getBackend()}`
   );
 
-  console.log("Loading FaceAPI models");
+  //console.log("Loading FaceAPI models");
   const modelPath = path.join(__dirname, modelPathRoot);
-  await faceapi.nets.ssdMobilenetv1.loadFromDisk(modelPath);
-  optionsSSDMobileNet = new faceapi.SsdMobilenetv1Options({
-    minConfidence: 0.5,
+
+//console.log(faceapi)
+//console.log(faceapi.nets)
+// ageGenderNet
+// faceExpressionNet
+// faceLandmark68Net
+// faceLandmark68TinyNet
+// faceRecognitionNet
+// ssdMobilenetv1
+// tinyFaceDetector
+// tinyYolov2
+
+//  await faceapi.nets.ssdMobilenetv1.loadFromDisk(modelPath);
+//  await faceapi.nets.ageGenderNet.loadFromDisk(modelPath);
+
+try {
+  await faceapi.nets.tinyFaceDetector.loadFromDisk(modelPath);
+} catch(err) {
+  console.log(err)
+}
+
+  optionsTiny = new faceapi.TinyFaceDetectorOptions({
+    minConfidence: 0.33,
+    inputSize: 160
   });
+
+  //optionsSSDMobileNet = new faceapi.SsdMobilenetv1Options({
+    //minConfidence: 0.5,
+  //});
 
   if (file) {
     tensor = await image(file);
